@@ -145,7 +145,7 @@ def decrypt3DES( globalSalt, masterPassword, entrySalt, encryptedData ):
   return DES3.new( key, DES3.MODE_CBC, iv).decrypt(encryptedData)
   
 def getLoginData():
-  conn = sqlite3.connect(options.directory+'signons.sqlite')
+  conn = sqlite3.connect(options.signons)
   c = conn.cursor()
   c.execute("SELECT * FROM moz_logins;")
   logins = []
@@ -215,10 +215,15 @@ def extractSecretKey(masterPassword):
 parser = OptionParser(usage="usage: %prog [options]")
 parser.add_option("-v", "--verbose", type="int", dest="verbose", help="verbose level", default=0)
 parser.add_option("-p", "--password", type="string", dest="masterPassword", help="masterPassword", default='')
-parser.add_option("-d", "--dir", type="string", dest="directory", help="directory", default='')
+parser.add_option("-k", "--keydb", type="string", dest="keydb", help="Key Database", default='')
+parser.add_option("-s", "--signonsdb", type="string", dest="signons", help="Signons Database", default='')
 (options, args) = parser.parse_args()
 
-key3 = readBsddb(options.directory+'key3.db')
+if options.signons == None or options.keydb == None:
+  parser.print_help()
+  sys.exit(0)
+
+key3 = readBsddb(options.keydb)
 
 if ord(key3['Version']) == 3:
   key = extractSecretKey(options.masterPassword)
@@ -226,7 +231,7 @@ if ord(key3['Version']) == 3:
   if len(logins)==0:
     print 'no stored passwords'
   else:
-    print 'decrypting login/password pairs'  
+    print 'decrypting login/password pairs'
   for i in logins:
     print '%20s:' % i[2],  #site URL
     iv = i[0][1]
